@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pilot Effort Score Calculator</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; }
+        h1 { color: #333; }
+        label { display: block; margin-top: 10px; }
+        input, select, button { margin-top: 5px; padding: 8px; width: 100%; max-width: 400px; }
+        button { background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #45a049; }
+        .result { margin-top: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Pilot Effort Score Calculator</h1>
+    
+    <label for="basePES">Base PES (0-100):</label>
+    <input type="number" id="basePES" min="0" max="100">
+
+    <label for="ssm">Scheduling Stability Modifier (SSM):</label>
+    <select id="ssm">
+        <option value="0">≥ 7 days firm (+0)</option>
+        <option value="3">48–168 hrs (+3)</option>
+        <option value="6">24–48 hrs (+6)</option>
+        <option value="8">&lt;24 hrs (+8)</option>
+        <option value="10">&lt;12 hrs / circadian impact (+10)</option>
+    </select>
+
+    <label for="rcm">Route Change / Diversion Modifier (RCM):</label>
+    <select id="rcm">
+        <option value="0">None (+0)</option>
+        <option value="3">Owner-requested swap before departure (+3)</option>
+        <option value="6">Added intermediate stop(s) (+6)</option>
+        <option value="4">WX/ATC diversion to planned alternate (+4)</option>
+        <option value="6">WX/ATC diversion to unplanned field (+6)</option>
+        <option value="8">Multiple diversions (+8)</option>
+        <option value="10">Max route workload (+10)</option>
+    </select>
+
+    <button onclick="calculatePES()">Calculate PES</button>
+
+    <div class="result" id="result"></div>
+
+    <script>
+        function calculatePES() {
+            let base = parseInt(document.getElementById('basePES').value) || 0;
+            let ssm = parseInt(document.getElementById('ssm').value);
+            let rcm = parseInt(document.getElementById('rcm').value);
+
+            let finalScore = base + ssm + rcm;
+            if (finalScore > 100) finalScore = 100;
+
+            let label = '';
+            if (finalScore <= 20) label = 'Cushion';
+            else if (finalScore <= 40) label = 'Routine';
+            else if (finalScore <= 60) label = 'Taxing';
+            else if (finalScore <= 80) label = 'Hard';
+            else label = 'Max Effort';
+
+            document.getElementById('result').innerHTML = 
+                `Final PES: ${finalScore} (${label})`;
+        }
+    </script>
+</body>
+</html>
