@@ -1,68 +1,338 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pilot Effort Score Calculator</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; }
-        h1 { color: #333; }
-        label { display: block; margin-top: 10px; }
-        input, select, button { margin-top: 5px; padding: 8px; width: 100%; max-width: 400px; }
-        button { background-color: #4CAF50; color: white; border: none; cursor: pointer; }
-        button:hover { background-color: #45a049; }
-        .result { margin-top: 20px; font-weight: bold; }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Pilot Effort Score (PES) Calculator</title>
+  <style>
+    :root{--bg:#0f172a;--card:#0b1220;--muted:#9aa4b2;--accent:#3b82f6;--success:#10b981;--danger:#ef4444;--glass: rgba(255,255,255,0.03)}
+    html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial; background:linear-gradient(180deg,#071025 0%, #051123 100%);color:#e6eef6}
+    .wrap{max-width:980px;margin:28px auto;padding:20px}
+    h1{font-size:20px;margin:0 0 6px}
+    p.lead{margin:0 0 18px;color:var(--muted)}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
+    .card{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 6px 18px rgba(2,6,23,0.6);}
+    label{display:block;font-size:12px;color:var(--muted);margin-bottom:8px}
+    .row{display:flex;gap:8px;align-items:center}
+    input[type="number"], select, input[type="time"], input[type="date"]{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:var(--glass);color:inherit}
+    .small{font-size:13px;color:var(--muted)}
+    .section{margin-bottom:12px}
+    .muted{color:var(--muted);font-size:13px}
+    .btn{background:linear-gradient(180deg,var(--accent),#2563eb);border:none;padding:10px 12px;border-radius:10px;color:white;cursor:pointer}
+    .secondary{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:8px}
+    .result-score{font-size:36px;font-weight:700}
+    .meter{height:10px;border-radius:6px;background:rgba(255,255,255,0.05);overflow:hidden}
+    .meter > i{display:block;height:100%;background:linear-gradient(90deg,#06b6d4,#3b82f6);}
+    .tag{display:inline-block;padding:6px 8px;border-radius:999px;font-size:12px}
+    .label-good{background:rgba(16,185,129,0.12);color:var(--success)}
+    .label-bad{background:rgba(239,68,68,0.12);color:var(--danger)}
+    .example{font-size:13px;color:var(--muted);margin-top:6px}
+    textarea{width:100%;min-height:80px;padding:8px;border-radius:8px;background:var(--glass);border:1px solid rgba(255,255,255,0.03);color:inherit}
+    footer{margin-top:16px;color:var(--muted);font-size:13px}
+    @media (max-width:880px){.grid{grid-template-columns:1fr;}.card{padding:12px}}
+  </style>
 </head>
 <body>
-    <h1>Pilot Effort Score Calculator</h1>
-    
-    <label for="basePES">Base PES (0-100):</label>
-    <input type="number" id="basePES" min="0" max="100">
+  <div class="wrap">
+    <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div>
+        <h1>Pilot Effort Score (PES) — Calculator</h1>
+        <p class="lead">Enter flight-day details. The calculator computes Base PES + Scheduling Stability Modifier (SSM) + Route Change / Diversion Modifier (RCM). Final score capped at 100.</p>
+      </div>
+      <div class="small muted">Generated for GitHub Pages — single-file</div>
+    </header>
 
-    <label for="ssm">Scheduling Stability Modifier (SSM):</label>
-    <select id="ssm">
-        <option value="0">≥ 7 days firm (+0)</option>
-        <option value="3">48–168 hrs (+3)</option>
-        <option value="6">24–48 hrs (+6)</option>
-        <option value="8">&lt;24 hrs (+8)</option>
-        <option value="10">&lt;12 hrs / circadian impact (+10)</option>
-    </select>
+    <div class="grid">
+      <div class="card" id="main">
+        <div class="section">
+          <label>Report date</label>
+          <div style="display:flex;gap:8px"><input type="date" id="reportDate" /><input type="time" id="reportTime" value="06:00" /></div>
+          <div style="margin-top:10px;display:flex;gap:8px"><label style="flex:1"><div class="small">Release date</div><input type="date" id="releaseDate" /><input type="time" id="releaseTime" value="18:00" /></label>
+          <label style="width:160px"><div class="small">Total block minutes (optional)</div><input type="number" id="blockMins" min="0" placeholder="e.g. 240" /></label>
+          </div>
+        </div>
 
-    <label for="rcm">Route Change / Diversion Modifier (RCM):</label>
-    <select id="rcm">
-        <option value="0">None (+0)</option>
-        <option value="3">Owner-requested swap before departure (+3)</option>
-        <option value="6">Added intermediate stop(s) (+6)</option>
-        <option value="4">WX/ATC diversion to planned alternate (+4)</option>
-        <option value="6">WX/ATC diversion to unplanned field (+6)</option>
-        <option value="8">Multiple diversions (+8)</option>
-        <option value="10">Max route workload (+10)</option>
-    </select>
+        <hr style="border:none;border-top:1px solid rgba(255,255,255,0.03);margin:8px 0 12px" />
 
-    <button onclick="calculatePES()">Calculate PES</button>
+        <div class="section">
+          <label>Operational workload</label>
+          <div class="row" style="margin-bottom:8px"><div style="flex:1"><div class="small">Number of legs</div><input type="number" id="legs" min="1" value="1" /></div>
+          <div style="width:160px"><div class="small">Avg turn time (min)</div><input type="number" id="turnTime" min="0" value="90" /></div>
+          </div>
+          <div style="display:flex;gap:8px"><div style="flex:1"><label class="small">Airspace/terrain complexity</label><select id="airComplex"><option value="0">None</option><option value="3">Some</option><option value="6">High</option></select></div>
+          <div style="width:180px"><label class="small">Crew type</label><select id="crewType"><option value="2">Two-pilot</option><option value="7">Single-pilot IFR</option></select></div></div>
+        </div>
 
-    <div class="result" id="result"></div>
+        <div class="section">
+          <label>Weather & environment</label>
+          <div class="row" style="gap:12px;margin-bottom:8px">
+            <div style="flex:1"><div class="small">IMC prevalence</div><select id="imc"><option value="0">VMC all legs</option><option value="5">Some IMC</option><option value="10">Most/All IMC</option></select></div>
+            <div style="width:160px"><div class="small">Approaches to mins?</div><select id="toMins"><option value="0">None</option><option value="7">One or more</option></select></div>
+          </div>
+          <div style="display:flex;gap:8px"><div style="flex:1"><div class="small">Significant hazards</div><select id="hazards"><option value="0">None/light</option><option value="4">Moderate</option><option value="8">Severe/widespread</option></select></div>
+          <div style="width:180px"><div class="small">Crosswind/gust factor</div><select id="xwind"><option value="0">Low (&lt;1/3 limit)</option><option value="3">Moderate</option><option value="5">High (&gt;2/3)</option></select></div></div>
+        </div>
 
-    <script>
-        function calculatePES() {
-            let base = parseInt(document.getElementById('basePES').value) || 0;
-            let ssm = parseInt(document.getElementById('ssm').value);
-            let rcm = parseInt(document.getElementById('rcm').value);
+        <div class="section">
+          <label>Disruptions & constraints</label>
+          <div style="display:flex;gap:8px"><div style="flex:1"><div class="small">ATC delays / holding</div><select id="atc"><option value="0">None/minor</option><option value="3">Some</option><option value="5">Frequent/significant</option></select></div>
+          <div style="width:180px"><div class="small">MEL / automation degradation</div><select id="mel"><option value="0">None</option><option value="3">Minor</option><option value="6">Major</option></select></div></div>
+          <div style="margin-top:8px"><div class="small">Passenger / ops pressure</div><select id="pressure"><option value="0">Low</option><option value="2">Moderate</option><option value="4">High</option></select></div>
+        </div>
 
-            let finalScore = base + ssm + rcm;
-            if (finalScore > 100) finalScore = 100;
+        <div class="section">
+          <label>Human factors & recovery</label>
+          <div style="display:flex;gap:8px"><div style="flex:1"><div class="small">Breaks & nutrition</div><select id="meals"><option value="0">Proper meal & breaks</option><option value="3">Missed meal OR no meaningful break</option><option value="5">Both missed</option></select></div>
+          <div style="width:180px"><div class="small">Avg cross-country flight time (hours) — optional</div><input type="number" id="fltHours" min="0" step="0.1" /></div></div>
+        </div>
 
-            let label = '';
-            if (finalScore <= 20) label = 'Cushion';
-            else if (finalScore <= 40) label = 'Routine';
-            else if (finalScore <= 60) label = 'Taxing';
-            else if (finalScore <= 80) label = 'Hard';
-            else label = 'Max Effort';
+        <hr style="border:none;border-top:1px solid rgba(255,255,255,0.03);margin:12px 0" />
 
-            document.getElementById('result').innerHTML = 
-                `Final PES: ${finalScore} (${label})`;
-        }
-    </script>
+        <div class="section">
+          <label>Scheduling Stability Modifier (SSM)</label>
+          <div class="small muted">How far ahead was the plan firm?</div>
+          <select id="ssm"><option value="0">&gt;= 7 days (firm)</option><option value="3">48–168 hrs (2–7 days)</option><option value="6">24–48 hrs</option><option value="8">&lt;24 hrs (night-before)</option><option value="10">&lt;12 hrs or pulled into WOCL</option></select>
+        </div>
+
+        <div class="section">
+          <label>Route Change / Diversion Modifier (RCM)</label>
+          <div class="small muted">Select any same-day changes (each adds up to cap of 10)</div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
+            <label><input type="checkbox" id="ownerSwap" value="3" /> Owner-requested destination swap (same day) +3</label>
+            <label><input type="checkbox" id="addedStop" value="3" /> Added intermediate stop day-of +3 (each, max 6)</label>
+            <label><input type="checkbox" id="weatherPlannedAlt" value="4" /> WX diversion to planned alternate +4</label>
+            <label><input type="checkbox" id="weatherUnplanned" value="6" /> Diversion to unplanned field +6</label>
+            <label><input type="checkbox" id="multipleDiverts" value="2" /> Multiple diversions beyond first +2 each (max +4 add)</label>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:12px;align-items:center">
+          <button class="btn" onclick="compute()">Compute PES</button>
+          <button class="secondary" onclick="fillExample('easy')">Fill Example: Easy VFR</button>
+          <button class="secondary" onclick="fillExample('ugly')">Fill Example: Long IFR Day</button>
+          <button class="secondary" onclick="resetForm()">Reset</button>
+        </div>
+
+        <div style="margin-top:12px">
+          <label class="small">Notes / debrief (optional)</label>
+          <textarea id="notes" placeholder="What drove effort? e.g. early call, missed lunch, unplanned divert"></textarea>
+        </div>
+
+      </div>
+
+      <aside class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div>
+            <div class="muted">Final PES</div>
+            <div style="display:flex;align-items:baseline;gap:10px"><div class="result-score" id="finalScore">0</div><div class="small muted">/100</div></div>
+          </div>
+          <div style="text-align:right">
+            <div class="muted">Label</div>
+            <div id="label" style="margin-top:6px" class="tag label-good">—</div>
+          </div>
+        </div>
+
+        <div style="margin:10px 0"><div class="muted">Breakdown</div>
+          <div style="display:grid;grid-template-columns:1fr 70px;gap:6px;margin-top:8px">
+            <div class="small muted">Base PES</div><div id="baseVal" style="text-align:right">0</div>
+            <div class="small muted">SSM</div><div id="ssmVal" style="text-align:right">0</div>
+            <div class="small muted">RCM</div><div id="rcmVal" style="text-align:right">0</div>
+            <div class="small muted">Crew add-on</div><div id="crewVal" style="text-align:right">0</div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px">
+          <div class="muted">Visual</div>
+          <div class="meter" style="margin-top:8px"><i id="meterFill" style="width:0%"></i></div>
+        </div>
+
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <button class="btn" onclick="exportJSON()">Export JSON</button>
+          <button class="secondary" onclick="exportCSV()">Export CSV</button>
+        </div>
+
+        <div style="margin-top:12px">
+          <div class="muted">Quick tips</div>
+          <ul class="muted" style="padding-left:16px;margin:6px 0">
+            <li>Score each completed day to track trends.</li>
+            <li>Trigger debriefs for PES ≥ 70.</li>
+            <li>Use SSM & RCM to capture planning and diversion stress.</li>
+          </ul>
+        </div>
+
+        <footer>Created for quick GitHub Pages hosting — copy the HTML file to your repo and enable Pages.</footer>
+      </aside>
+    </div>
+  </div>
+
+<script>
+function parseDateTime(dId,tId){
+  const d=document.getElementById(dId).value; const t=document.getElementById(tId).value||'00:00';
+  if(!d) return null; return new Date(d + 'T' + t);
+}
+
+function minutesBetween(a,b){ if(!a||!b) return 0; return Math.max(0, Math.round((b - a)/60000)); }
+
+function compute(){
+  // read inputs
+  const reportDT=parseDateTime('reportDate','reportTime');
+  const releaseDT=parseDateTime('releaseDate','releaseTime');
+  const legs=Number(document.getElementById('legs').value)||1;
+  const turnTime=Number(document.getElementById('turnTime').value)||90;
+  const airComplex=Number(document.getElementById('airComplex').value)||0;
+  const crewType=Number(document.getElementById('crewType').value)||2; // two-pilot default
+  const imc=Number(document.getElementById('imc').value)||0;
+  const toMins=Number(document.getElementById('toMins').value)||0;
+  const hazards=Number(document.getElementById('hazards').value)||0;
+  const xwind=Number(document.getElementById('xwind').value)||0;
+  const atc=Number(document.getElementById('atc').value)||0;
+  const mel=Number(document.getElementById('mel').value)||0;
+  const pressure=Number(document.getElementById('pressure').value)||0;
+  const meals=Number(document.getElementById('meals').value)||0;
+  const ssm=Number(document.getElementById('ssm').value)||0;
+
+  // RCM checkboxes
+  const ownerSwap=document.getElementById('ownerSwap').checked;
+  const addedStop=document.getElementById('addedStop').checked;
+  const weatherPlanned=document.getElementById('weatherPlannedAlt') ? document.getElementById('weatherPlannedAlt').checked : document.getElementById('weatherPlannedAlt');
+  const weatherUnplanned=document.getElementById('weatherUnplanned') ? document.getElementById('weatherUnplanned').checked : document.getElementById('weatherUnplanned');
+  const multipleDiverts=document.getElementById('multipleDiverts').checked;
+
+  // Compute base PES sections
+  // 1) Schedule & circadian (max 35): Duty length + circadian penalty
+  let dutyMins=0; if(reportDT && releaseDT){ dutyMins = minutesBetween(reportDT, releaseDT); }
+  // duty scoring
+  let dutyScore=0;
+  if(dutyMins <= 360) dutyScore=0;
+  else if(dutyMins <= 480) dutyScore=5;
+  else if(dutyMins <= 600) dutyScore=10;
+  else if(dutyMins <= 720) dutyScore=15;
+  else dutyScore=20;
+  // circadian penalty (report local hour)
+  let circ=0;
+  if(reportDT){ const hr = reportDT.getHours(); if(hr>=7 && hr<=10) circ=0; else if(hr>=5 && hr<=6) circ=5; else if(hr>=3 && hr<=4) circ=10; else if(hr>=23 || hr<=2) circ=15; }
+  const scheduleCircScore = Math.min(35, dutyScore + circ);
+
+  // 2) Operational workload (max 23)
+  let legsScore = 0;
+  if(legs===1) legsScore=0; else if(legs===2) legsScore=3; else if(legs===3) legsScore=6; else if(legs===4) legsScore=9; else if(legs>=5) legsScore=12;
+  let turnScore = (turnTime >= 75) ? 0 : (turnTime >=45 ? 3 : 5);
+  let airComplexScore = airComplex; // 0/3/6
+  const opWorkScore = Math.min(23, legsScore + turnScore + airComplexScore);
+
+  // 3) Weather & environment (max 25)
+  const imcScore = imc; // 0/5/10
+  const toMinsScore = toMins; // 0/7
+  const hazardsScore = hazards; // 0/4/8
+  const xwindScore = xwind; // 0/3/5
+  const weatherScore = Math.min(25, imcScore + toMinsScore + hazardsScore + xwindScore);
+
+  // 4) Disruptions & constraints (max 12)
+  const atcScore = atc; // 0/3/5
+  const melScore = mel; // 0/3/6
+  const pressureScore = pressure; // 0/2/4
+  const disruptionsScore = Math.min(12, atcScore + melScore + pressureScore);
+
+  // 5) Human factors & recovery (max 5)
+  const humanScore = meals; // 0/3/5
+
+  // crew add-on (single-pilot IFR +5 if chosen)
+  const crewAdd = (crewType === 7) ? 5 : 0;
+
+  // Base PES sum
+  const basePES = Math.min(100, scheduleCircScore + opWorkScore + weatherScore + disruptionsScore + humanScore);
+
+  // SSM (already from select)
+  const ssmVal = ssm;
+
+  // RCM compute
+  let rcm=0;
+  if(ownerSwap) rcm += 3;
+  if(addedStop) rcm += 3; // note: UI warns max 6 but we'll allow user to check multiple times? single checkbox = +3
+  if(document.getElementById('weatherPlannedAlt').checked) rcm += 4;
+  if(document.getElementById('weatherUnplanned').checked) rcm += 6;
+  if(multipleDiverts) rcm += 2;
+  if(rcm > 10) rcm = 10;
+
+  // Final PES
+  let final = Math.min(100, basePES + ssmVal + rcm + crewAdd);
+
+  // Labeling
+  let labelText = '';
+  let labelClass = 'label-good';
+  if(final <= 20){ labelText = 'Cushion day'; labelClass='label-good'; }
+  else if(final <= 40){ labelText = 'Routine'; labelClass='label-good'; }
+  else if(final <= 60){ labelText = 'Taxing'; labelClass='label-bad'; }
+  else if(final <= 80){ labelText = 'Hard day'; labelClass='label-bad'; }
+  else { labelText = 'Max effort'; labelClass='label-bad'; }
+
+  // write to UI
+  document.getElementById('finalScore').textContent = final;
+  const labelEl = document.getElementById('label'); labelEl.textContent = labelText; labelEl.className = 'tag ' + (final<=40 ? 'label-good' : 'label-bad');
+  document.getElementById('baseVal').textContent = basePES;
+  document.getElementById('ssmVal').textContent = ssmVal;
+  document.getElementById('rcmVal').textContent = rcm;
+  document.getElementById('crewVal').textContent = crewAdd;
+  document.getElementById('meterFill').style.width = final + '%';
+}
+
+function exportJSON(){
+  compute();
+  const payload = gatherPayload();
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='pes-entry.json'; a.click(); URL.revokeObjectURL(url);
+}
+function exportCSV(){
+  compute();
+  const p = gatherPayload();
+  const keys = Object.keys(p);
+  const csv = keys.join(',') + '\n' + keys.map(k=> JSON.stringify(String(p[k]).replace(/\n/g,' '))).join(',');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='pes-entry.csv'; a.click(); URL.revokeObjectURL(url);
+}
+function gatherPayload(){
+  const fields = ['reportDate','reportTime','releaseDate','releaseTime','legs','turnTime','airComplex','crewType','imc','toMins','hazards','xwind','atc','mel','pressure','meals','ssm','ownerSwap','addedStop','weatherPlannedAlt','weatherUnplanned','multipleDiverts','notes'];
+  const obj={};
+  fields.forEach(f=>{
+    const el = document.getElementById(f);
+    if(!el) return; if(el.type==='checkbox') obj[f]=el.checked; else obj[f]=el.value;
+  });
+  obj.generatedAt = new Date().toISOString();
+  obj.finalScore = document.getElementById('finalScore').textContent;
+  obj.label = document.getElementById('label').textContent;
+  return obj;
+}
+
+function fillExample(which){
+  resetForm();
+  if(which==='easy'){
+    const today = new Date(); const d = today.toISOString().slice(0,10);
+    document.getElementById('reportDate').value=d; document.getElementById('reportTime').value='12:00';
+    document.getElementById('releaseDate').value=d; document.getElementById('releaseTime').value='18:00';
+    document.getElementById('legs').value=1; document.getElementById('turnTime').value=90; document.getElementById('imc').value='0'; document.getElementById('ssm').value='0'; document.getElementById('meals').value='0';
+    compute();
+  } else {
+    const today = new Date(); const d = today.toISOString().slice(0,10);
+    document.getElementById('reportDate').value=d; document.getElementById('reportTime').value='06:00';
+    document.getElementById('releaseDate').value=d; document.getElementById('releaseTime').value='19:00';
+    document.getElementById('legs').value=4; document.getElementById('turnTime').value=30; document.getElementById('imc').value='10'; document.getElementById('toMins').value='7'; document.getElementById('hazards').value='8'; document.getElementById('xwind').value='3'; document.getElementById('ssm').value='8'; document.getElementById('meals').value='5'; document.getElementById('airComplex').value='3'; document.getElementById('atc').value='3'; document.getElementById('pressure').value='2';
+    document.getElementById('ownerSwap').checked = false; document.getElementById('addedStop').checked=false; document.getElementById('weatherPlannedAlt').checked=false; document.getElementById('weatherUnplanned').checked=false; document.getElementById('multipleDiverts').checked=false;
+    compute();
+  }
+}
+
+function resetForm(){
+  document.querySelectorAll('input,select,textarea').forEach(el=>{
+    if(el.type==='checkbox') el.checked=false; else if(el.tagName==='SELECT') el.selectedIndex=0; else if(el.type!=='date' && el.type!=='time') el.value='';
+  });
+  // restore sensible defaults
+  document.getElementById('legs').value=1; document.getElementById('turnTime').value=90; document.getElementById('crewType').value=2; document.getElementById('reportTime').value='06:00'; document.getElementById('releaseTime').value='18:00'; document.getElementById('imc').value='0'; document.getElementById('meals').value='0'; document.getElementById('ssm').value='0';
+  document.getElementById('finalScore').textContent='0'; document.getElementById('label').textContent='—'; document.getElementById('meterFill').style.width='0%';
+}
+
+// init
+resetForm();
+</script>
 </body>
 </html>
